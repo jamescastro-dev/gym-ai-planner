@@ -1,12 +1,12 @@
 import { RedirectToSignIn, SignedIn } from "@neondatabase/neon-js/auth/react";
-import { useAuth } from "../context/AuthContext";
-import { Select } from "../components/ui/Select";
+import { useAuth } from "@/context/AuthContext";
+import { Select } from "@/components/ui/Select";
 import { useState } from "react";
-import { Textarea } from "../components/ui/Textarea";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
+import { Textarea } from "@/components/ui/Textarea";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { ArrowRight, Dumbbell, Zap, Target, Clock } from "lucide-react";
-import type { UserProfile } from "../types";
+import type { UserProfile } from "@/types";
 import { useNavigate } from "react-router-dom";
 
 const goalOptions = [

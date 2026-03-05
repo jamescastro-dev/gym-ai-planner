@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
+import { useAuth } from "@/context/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import {
   Calendar,
   Dumbbell,
@@ -10,7 +10,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
-import { PlanDisplay } from "../components/plan/PlanDisplay";
+import { PlanDisplay } from "@/components/plan/PlanDisplay";
 import { useState } from "react";
 
 export default function Profile() {

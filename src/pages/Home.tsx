@@ -8,9 +8,9 @@ import {
   Clock,
   Dumbbell,
 } from "lucide-react";
-import { Button } from "../components/ui/Button";
-import { Card } from "../components/ui/Card";
-import { useAuth } from "../context/AuthContext";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { useAuth } from "@/context/AuthContext";
 
 const features = [
   {
