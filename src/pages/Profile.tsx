@@ -16,6 +16,7 @@ import { useState } from "react";
 export default function Profile() {
   const { user, isLoading, plan, generatePlan } = useAuth();
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
 
   if (!user && !isLoading) return <Navigate to="/auth/sign-in" replace />;
   if (!plan) return <Navigate to="/onboarding" replace />;
@@ -110,8 +111,18 @@ export default function Profile() {
                   {stat.label}
                 </p>
                 <p
-                  className="text-sm font-semibold truncate"
+                  className="text-sm font-semibold truncate cursor-default"
                   style={{ color: "var(--color-foreground)" }}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTooltip({ text: stat.value, x: rect.left, y: rect.bottom + 6 });
+                  }}
+                  onMouseLeave={() => setTooltip(null)}
+                  onTouchStart={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setTooltip({ text: stat.value, x: rect.left, y: rect.bottom + 6 });
+                  }}
+                  onTouchEnd={() => setTimeout(() => setTooltip(null), 2000)}
                 >
                   {stat.value}
                 </p>
@@ -162,6 +173,22 @@ export default function Profile() {
         </div>
 
       </div>
+
+      {/* ── TOOLTIP ── */}
+      {tooltip && (
+        <div
+          className="fixed z-50 px-3 py-2 rounded-lg text-xs max-w-56 shadow-lg border pointer-events-none"
+          style={{
+            left: tooltip.x,
+            top: tooltip.y,
+            background: "var(--color-background)",
+            borderColor: "color-mix(in srgb, var(--color-accent) 25%, transparent)",
+            color: "var(--color-foreground)",
+          }}
+        >
+          {tooltip.text}
+        </div>
+      )}
     </div>
   );
 }
