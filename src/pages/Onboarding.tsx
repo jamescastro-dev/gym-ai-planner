@@ -56,14 +56,18 @@ function SectionLabel({ icon: Icon, label }: { icon: any; label: string }) {
     <div className="flex items-center gap-2 mb-4">
       <div
         className="w-6 h-6 rounded-md flex items-center justify-center"
-        style={{ background: "color-mix(in srgb, var(--color-accent) 15%, transparent)" }}
-      >
-        <Icon className="w-3.5 h-3.5" style={{ color: "var(--color-accent)" }} />
+        style={{
+          background:
+            "color-mix(in srgb, var(--color-accent) 15%, transparent)",
+        }}>
+        <Icon
+          className="w-3.5 h-3.5"
+          style={{ color: "var(--color-accent)" }}
+        />
       </div>
       <span
         className="text-xs font-semibold tracking-widest uppercase"
-        style={{ color: "var(--color-accent)" }}
-      >
+        style={{ color: "var(--color-accent)" }}>
         {label}
       </span>
     </div>
@@ -119,35 +123,51 @@ export default function Onboarding() {
       <SignedIn>
         <div
           className="min-h-screen flex items-center justify-center px-6"
-          style={{ background: "var(--color-background)" }}
-        >
+          style={{ background: "var(--color-background)" }}>
           <div
             className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 rounded-full blur-[120px] opacity-10 pointer-events-none"
             style={{ background: "var(--color-accent)" }}
           />
           <div className="relative text-center max-w-sm">
             <div className="relative w-24 h-24 mx-auto mb-8">
-              <div className="absolute inset-0 rounded-full border-2 opacity-10" style={{ borderColor: "var(--color-accent)" }} />
+              <div
+                className="absolute inset-0 rounded-full border-2 opacity-10"
+                style={{ borderColor: "var(--color-accent)" }}
+              />
               <div
                 className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
-                style={{ borderTopColor: "var(--color-accent)", animationDuration: "1s" }}
+                style={{
+                  borderTopColor: "var(--color-accent)",
+                  animationDuration: "1s",
+                }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Zap className="w-8 h-8" style={{ color: "var(--color-accent)" }} />
+                <Zap
+                  className="w-8 h-8"
+                  style={{ color: "var(--color-accent)" }}
+                />
               </div>
             </div>
-            <h2 className="text-2xl font-bold mb-3" style={{ color: "var(--color-foreground)" }}>
+            <h2
+              className="text-2xl font-bold mb-3"
+              style={{ color: "var(--color-foreground)" }}>
               Building your plan
             </h2>
-            <p className="text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
-              Our AI is crafting a personalized training program based on your goals and schedule...
+            <p
+              className="text-sm leading-relaxed"
+              style={{ color: "var(--color-muted)" }}>
+              Our AI is crafting a personalized training program based on your
+              goals and schedule...
             </p>
             <div className="flex items-center justify-center gap-1.5 mt-8">
               {[0, 1, 2].map((i) => (
                 <div
                   key={i}
                   className="w-1.5 h-1.5 rounded-full animate-pulse"
-                  style={{ background: "var(--color-accent)", animationDelay: `${i * 0.2}s` }}
+                  style={{
+                    background: "var(--color-accent)",
+                    animationDelay: `${i * 0.2}s`,
+                  }}
                 />
               ))}
             </div>
@@ -161,8 +181,7 @@ export default function Onboarding() {
     <SignedIn>
       <div
         className="min-h-screen flex items-center justify-center px-6 py-24"
-        style={{ background: "var(--color-background)" }}
-      >
+        style={{ background: "var(--color-background)" }}>
         {/* bg glow */}
         <div
           className="fixed top-0 right-0 w-125 h-125 rounded-full blur-[140px] opacity-5 pointer-events-none"
@@ -170,21 +189,23 @@ export default function Onboarding() {
         />
 
         <div className="relative w-full max-w-3xl">
-
           {/* Header */}
           <div className="mb-8">
             <div
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium mb-4 border"
               style={{
-                background: "color-mix(in srgb, var(--color-accent) 8%, transparent)",
-                borderColor: "color-mix(in srgb, var(--color-accent) 25%, transparent)",
+                background:
+                  "color-mix(in srgb, var(--color-accent) 8%, transparent)",
+                borderColor:
+                  "color-mix(in srgb, var(--color-accent) 25%, transparent)",
                 color: "var(--color-accent)",
-              }}
-            >
+              }}>
               <Zap className="w-3 h-3" />
               Quick Setup
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mb-1" style={{ color: "var(--color-foreground)" }}>
+            <h1
+              className="text-3xl font-bold tracking-tight mb-1"
+              style={{ color: "var(--color-foreground)" }}>
               Let's build your plan.
             </h1>
             <p className="text-sm" style={{ color: "var(--color-muted)" }}>
@@ -195,7 +216,6 @@ export default function Onboarding() {
           {/* Form card */}
           <form onSubmit={handleQuestionnaire}>
             <Card variant="bordered">
-
               {/* Row 1: Goals | Schedule side by side */}
               <div className="grid grid-cols-2 gap-x-8 mb-6">
                 <div>
@@ -226,21 +246,28 @@ export default function Onboarding() {
                       label="Days per week"
                       options={daysOptions}
                       value={formData.daysPerWeek}
-                      onChange={(e) => updateForm("daysPerWeek", e.target.value)}
+                      onChange={(e) =>
+                        updateForm("daysPerWeek", e.target.value)
+                      }
                     />
                     <Select
                       id="sessionLength"
                       label="Session length"
                       options={sessionOptions}
                       value={formData.sessionLength}
-                      onChange={(e) => updateForm("sessionLength", e.target.value)}
+                      onChange={(e) =>
+                        updateForm("sessionLength", e.target.value)
+                      }
                     />
                   </div>
                 </div>
               </div>
 
               {/* Divider */}
-              <div className="mb-6" style={{ borderTop: "1px solid var(--color-border)" }} />
+              <div
+                className="mb-6"
+                style={{ borderTop: "1px solid var(--color-border)" }}
+              />
 
               {/* Row 2: Equipment + Split + Injuries */}
               <div>
@@ -258,7 +285,9 @@ export default function Onboarding() {
                     label="Preferred training split"
                     options={splitOptions}
                     value={formData.preferredSplit}
-                    onChange={(e) => updateForm("preferredSplit", e.target.value)}
+                    onChange={(e) =>
+                      updateForm("preferredSplit", e.target.value)
+                    }
                   />
                   <div className="col-span-2">
                     <Textarea
@@ -281,8 +310,7 @@ export default function Onboarding() {
                     color: "#f87171",
                     background: "rgba(239,68,68,0.08)",
                     border: "1px solid rgba(239,68,68,0.2)",
-                  }}
-                >
+                  }}>
                   {error}
                 </p>
               )}
@@ -294,13 +322,8 @@ export default function Onboarding() {
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Button>
               </div>
-
             </Card>
           </form>
-
-          <p className="text-center text-xs mt-4" style={{ color: "var(--color-muted)" }}>
-            You can update your preferences anytime from your profile.
-          </p>
         </div>
       </div>
     </SignedIn>
