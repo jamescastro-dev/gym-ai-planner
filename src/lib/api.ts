@@ -36,7 +36,10 @@ export const api = {
     return post("/plan/generate", { userId });
   },
 
-  getCurrentPlan: (userId: string) => {
-    return get(`/plan/current?userId=${userId}`);
+  getCurrentPlan: async (userId: string) => {
+    const res = await fetch(`${BASE_URL}/api/plan/current?userId=${userId}`);
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Request failed");
+    return res.json();
   },
 };
