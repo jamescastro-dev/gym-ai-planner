@@ -38,7 +38,7 @@ export async function generateTrainingPlan(
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "meta-llama/llama-3.3-70b-instruct:free",
+      model: "google/gemma-3-27b-it:free",
       messages: [
         {
           role: "system",
@@ -51,7 +51,6 @@ export async function generateTrainingPlan(
         },
       ],
       temperature: 0.7,
-      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0].message.content;
@@ -64,7 +63,8 @@ export async function generateTrainingPlan(
       throw new Error("No content in AI response");
     }
 
-    const planData = JSON.parse(content);
+    const jsonStr = content.replace(/^```(?:json)?\n?/, "").replace(/\n?```$/, "").trim();
+    const planData = JSON.parse(jsonStr);
 
     return formatPlanResponse(planData, normalizedProfile);
   } catch (error) {
