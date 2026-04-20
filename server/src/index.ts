@@ -32,6 +32,8 @@ app.use((req, res, next) => {
 app.use(cookieParser());
 app.use(express.json());
 
+app.get("/health", (_req, res) => res.json({ status: "ok" }));
+
 //API Routes
 app.use("/api/profile", profileRouter);
 app.use("/api/plan", planRouter);
