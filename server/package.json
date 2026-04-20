@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:server": "tsx watch src/index.ts"
+    "dev:server": "tsx watch src/index.ts",
+    "build": "prisma generate && tsc",
+    "start": "node dist/src/index.js"
   },
   "keywords": [],
   "author": "",
