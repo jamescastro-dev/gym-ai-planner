@@ -38,7 +38,7 @@ export async function generateTrainingPlan(
 
   try {
     const completion = await openai.chat.completions.create({
-      model: "google/gemma-3-27b-it:free",
+      model: "nvidia/nemotron-3-nano-30b-a3b:free",
       messages: [
         {
           role: "system",
@@ -51,6 +51,7 @@ export async function generateTrainingPlan(
         },
       ],
       temperature: 0.7,
+      response_format: { type: "json_object" },
     });
 
     const content = completion.choices[0].message.content;
