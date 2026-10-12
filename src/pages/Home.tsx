@@ -136,6 +136,11 @@ export default function Home() {
                     Sign In
                   </Button>
                 </Link>
+                <Link to="/sample">
+                  <Button variant="secondary" size="lg">
+                    View a sample plan
+                  </Button>
+                </Link>
               </div>
 
               <div className="flex items-center gap-8">

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { ArrowRight, Dumbbell, Zap, Target, Clock } from "lucide-react";
 import type { UserProfile } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { PlanError } from "@/components/plan/PlanError";
 
 const goalOptions = [
   { value: "bulk", label: "Build Muscle (Bulk)" },
@@ -95,6 +96,7 @@ export default function Onboarding() {
 
   async function handleQuestionnaire(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     const profile: Omit<UserProfile, "userId" | "updatedAt"> = {
       goal: formData.goal as UserProfile["goal"],
       experience: formData.experience as UserProfile["experience"],
@@ -158,6 +160,9 @@ export default function Onboarding() {
               style={{ color: "var(--color-muted)" }}>
               Our AI is crafting a personalized training program based on your
               goals and schedule...
+            </p>
+            <p className="text-xs mt-3" style={{ color: "var(--color-muted)" }}>
+              This can take up to a minute. Please keep this tab open.
             </p>
             <div className="flex items-center justify-center gap-1.5 mt-8">
               {[0, 1, 2].map((i) => (
@@ -304,15 +309,9 @@ export default function Onboarding() {
 
               {/* Error */}
               {error && (
-                <p
-                  className="text-sm px-4 py-3 rounded-xl mt-6"
-                  style={{
-                    color: "#f87171",
-                    background: "rgba(239,68,68,0.08)",
-                    border: "1px solid rgba(239,68,68,0.2)",
-                  }}>
-                  {error}
-                </p>
+                <div className="mt-6">
+                  <PlanError message={error} />
+                </div>
               )}
 
               {/* Submit */}
