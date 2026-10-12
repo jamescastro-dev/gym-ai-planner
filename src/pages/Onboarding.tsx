@@ -5,7 +5,14 @@ import { useState } from "react";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { ArrowRight, Dumbbell, Zap, Target, Clock } from "lucide-react";
+import {
+  ArrowRight,
+  Dumbbell,
+  Zap,
+  Target,
+  Clock,
+  type LucideIcon,
+} from "lucide-react";
 import type { UserProfile } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { PlanError } from "@/components/plan/PlanError";
@@ -52,7 +59,7 @@ const splitOptions = [
   { value: "custom", label: "Let AI Decide" },
 ];
 
-function SectionLabel({ icon: Icon, label }: { icon: any; label: string }) {
+function SectionLabel({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
   return (
     <div className="flex items-center gap-2 mb-4">
       <div

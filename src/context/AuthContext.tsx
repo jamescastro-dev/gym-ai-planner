@@ -7,12 +7,16 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TrainingPlan, User, UserProfile } from "../types";
+import type { TrainingPlan, UserProfile } from "../types";
 import { authClient } from "../lib/auth";
 import { api } from "../lib/api";
 
+type SessionUser = NonNullable<
+  Awaited<ReturnType<typeof authClient.getSession>>["data"]
+>["user"];
+
 interface AuthContextType {
-  user: User | null;
+  user: SessionUser | null;
   plan: TrainingPlan | null;
   isLoading: boolean;
   /** True until the first fetch of the signed-in user's plan has finished (so pages don't treat "not loaded yet" as "no plan"). */
@@ -27,11 +31,12 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export default function AuthProvider({ children }: { children: ReactNode }) {
-  const [neonUser, setNeonUser] = useState<any>(null);
+  const [neonUser, setNeonUser] = useState<SessionUser | null>(null);
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPlanLoading, setIsPlanLoading] = useState(true);
   const isRefreshingRef = useRef(false);
+  const userId = neonUser?.id;
 
   useEffect(() => {
     async function loadUser() {
@@ -42,7 +47,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setNeonUser(null);
         }
-      } catch (err) {
+      } catch {
         setNeonUser(null);
       } finally {
         setIsLoading(false);
@@ -54,11 +59,12 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   // refreshData BEFORE the second useEffect
   const refreshData = useCallback(async () => {
-    if (!neonUser || isRefreshingRef.current) return;
+    if (!userId || isRefreshingRef.current) return;
 
     isRefreshingRef.current = true;
 
     try {
+      // The backend identifies the user from the auth token.
       const planData = await api.getCurrentPlan().catch(() => null);
       if (planData) {
         setPlan({
@@ -77,11 +83,11 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       isRefreshingRef.current = false;
       setIsPlanLoading(false);
     }
-  }, [neonUser?.id]);
+  }, [userId]);
 
   useEffect(() => {
     if (!isLoading) {
-      if (neonUser?.id) {
+      if (userId) {
         refreshData();
       } else {
         setPlan(null);
@@ -89,7 +95,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       }
       setIsLoading(false);
     }
-  }, [neonUser?.id, isLoading, refreshData]);
+  }, [userId, isLoading, refreshData]);
 
   async function saveProfile(
     profileData: Omit<UserProfile, "userId" | "updatedAt">,
@@ -125,6 +131,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// The hook lives next to its provider on purpose; Fast Refresh just does a full reload for this file.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
