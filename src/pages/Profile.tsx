@@ -7,11 +7,23 @@ import { PlanError } from "@/components/plan/PlanError";
 import { useState } from "react";
 
 export default function Profile() {
-  const { user, isLoading, plan, generatePlan } = useAuth();
+  const { user, isLoading, isPlanLoading, plan, generatePlan } = useAuth();
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState("");
 
   if (!user && !isLoading) return <Navigate to="/auth/sign-in" replace />;
+  if (isLoading || isPlanLoading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: "var(--color-background)" }}
+        role="status"
+        aria-label="Loading your plan"
+      >
+        <Zap className="w-8 h-8 animate-pulse" style={{ color: "var(--color-accent)" }} />
+      </div>
+    );
+  }
   if (!plan) return <Navigate to="/onboarding" replace />;
 
   function formatDate(dateString: string) {

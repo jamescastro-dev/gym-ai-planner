@@ -15,6 +15,8 @@ interface AuthContextType {
   user: User | null;
   plan: TrainingPlan | null;
   isLoading: boolean;
+  /** True until the first fetch of the signed-in user's plan has finished (so pages don't treat "not loaded yet" as "no plan"). */
+  isPlanLoading: boolean;
   saveProfile: (
     profile: Omit<UserProfile, "userId" | "updatedAt">,
   ) => Promise<void>;
@@ -28,6 +30,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [neonUser, setNeonUser] = useState<any>(null);
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPlanLoading, setIsPlanLoading] = useState(true);
   const isRefreshingRef = useRef(false);
 
   useEffect(() => {
@@ -72,6 +75,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Error refreshing data:", error);
     } finally {
       isRefreshingRef.current = false;
+      setIsPlanLoading(false);
     }
   }, [neonUser?.id]);
 
@@ -81,6 +85,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         refreshData();
       } else {
         setPlan(null);
+        setIsPlanLoading(false);
       }
       setIsLoading(false);
     }
@@ -109,6 +114,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         user: neonUser,
         plan,
         isLoading,
+        isPlanLoading,
         saveProfile,
         generatePlan,
         refreshData,
