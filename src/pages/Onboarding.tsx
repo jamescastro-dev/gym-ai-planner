@@ -222,7 +222,7 @@ export default function Onboarding() {
           <form onSubmit={handleQuestionnaire}>
             <Card variant="bordered">
               {/* Row 1: Goals | Schedule side by side */}
-              <div className="grid grid-cols-2 gap-x-8 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 mb-6">
                 <div>
                   <SectionLabel icon={Target} label="Your Goal" />
                   <div className="space-y-4">
@@ -277,7 +277,7 @@ export default function Onboarding() {
               {/* Row 2: Equipment + Split + Injuries */}
               <div>
                 <SectionLabel icon={Dumbbell} label="Equipment & Training" />
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                   <Select
                     id="equipment"
                     label="Equipment access"
@@ -294,7 +294,7 @@ export default function Onboarding() {
                       updateForm("preferredSplit", e.target.value)
                     }
                   />
-                  <div className="col-span-2">
+                  <div className="sm:col-span-2">
                     <Textarea
                       id="injuries"
                       label="Injuries or limitations (optional)"

@@ -143,7 +143,7 @@ export default function Home() {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-8">
+              <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
                 {stats.map((s) => (
                   <div key={s.label}>
                     <div className="text-2xl font-bold tracking-tight" style={{ color: "var(--color-foreground)" }}>
@@ -251,7 +251,7 @@ export default function Home() {
 
         {/* Scroll hint */}
         <div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-2 opacity-30"
           style={{ color: "var(--color-muted)" }}
         >
           <div
