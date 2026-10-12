@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import { generateTrainingPlan } from "../lib/ai.js";
+import { AiUnavailableError, generateTrainingPlan } from "../lib/ai.js";
 
 export const planRouter = Router();
 
@@ -35,10 +35,22 @@ planRouter.post("/generate", async (req: Request, res: Response) => {
     try {
       planJson = await generateTrainingPlan(profile);
     } catch (error) {
-      console.error("AI generation failed:", error);
+      console.error("AI generation failed:", error instanceof Error ? error.message : error);
+      if (error instanceof AiUnavailableError) {
+        return res.status(503).json(
+          error.reason === "quota"
+            ? {
+                error: "Today's free AI quota has been used up. Try again tomorrow, or view a sample plan.",
+                code: "AI_QUOTA",
+              }
+            : {
+                error: "The AI is busy, try again in a few minutes.",
+                code: "AI_BUSY",
+              },
+        );
+      }
       return res.status(500).json({
         error: "Failed to generate training plan. Please try again.",
-        details: error instanceof Error ? error.message : "Unknown error",
       });
     }
 

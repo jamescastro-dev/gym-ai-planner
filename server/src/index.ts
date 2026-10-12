@@ -3,6 +3,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import { profileRouter } from "./routes/profile.js";
 import { planRouter } from "./routes/plan.js";
+import { getModels } from "./lib/ai.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -43,4 +44,5 @@ app.use("/api/plan", planRouter);
 app.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
   console.log(`[config] allowed origins: ${allowedOrigins.join(", ")}`);
+  console.log(`[config] AI models (in order): ${getModels().join(", ")}`);
 });
