@@ -26,7 +26,7 @@ function fallbackMessage(status: number): string {
   return "Something went wrong. Please try again.";
 }
 
-/** A Neon Auth token the backend can verify to identify the user. */
+/** The server identifies the user from this Neon Auth token, never from anything we send in the body. */
 async function authHeaders(): Promise<Record<string, string>> {
   const token = await getAccessToken();
   if (!token) {
@@ -77,10 +77,10 @@ async function request(method: "GET" | "POST", path: string, body?: object) {
 }
 
 export const api = {
-  saveProfile: (userId: string, profile: Omit<UserProfile, "userId" | "updatedAt">) =>
-    request("POST", "/profile", { userId, ...profile }),
+  saveProfile: (profile: Omit<UserProfile, "userId" | "updatedAt">) =>
+    request("POST", "/profile", profile),
 
-  generatePlan: (userId: string) => request("POST", "/plan/generate", { userId }),
+  generatePlan: () => request("POST", "/plan/generate", {}),
 
-  getCurrentPlan: (userId: string) => request("GET", `/plan/current?userId=${userId}`),
+  getCurrentPlan: () => request("GET", "/plan/current"),
 };

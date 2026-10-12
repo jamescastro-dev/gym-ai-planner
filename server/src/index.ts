@@ -17,6 +17,9 @@ const allowedOrigins = (
   .map((origin) => origin.trim())
   .filter(Boolean);
 
+// Number of reverse proxies in front of this server (needed for the per-IP rate limit to see visitor IPs).
+app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS ?? 1));
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin && allowedOrigins.includes(origin)) {
@@ -45,4 +48,7 @@ app.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
   console.log(`[config] allowed origins: ${allowedOrigins.join(", ")}`);
   console.log(`[config] AI models (in order): ${getModels().join(", ")}`);
+  if (!process.env.NEON_AUTH_URL) {
+    console.error("[config] NEON_AUTH_URL is not set — all /api requests will be rejected");
+  }
 });

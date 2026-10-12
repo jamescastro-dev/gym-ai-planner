@@ -56,7 +56,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     isRefreshingRef.current = true;
 
     try {
-      const planData = await api.getCurrentPlan(neonUser.id).catch(() => null);
+      const planData = await api.getCurrentPlan().catch(() => null);
       if (planData) {
         setPlan({
           id: planData.id,
@@ -92,14 +92,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     if (!neonUser) {
       throw new Error("User must be authenticated to save profile");
     }
-    await api.saveProfile(neonUser.id, profileData);
+    await api.saveProfile(profileData);
   }
 
   async function generatePlan() {
     if (!neonUser) {
       throw new Error("User must be authenticated to generate plan");
     }
-    await api.generatePlan(neonUser.id);
+    await api.generatePlan();
     await refreshData();
   }
 
