@@ -6,6 +6,7 @@ import Profile from "@/pages/Profile";
 import Auth from "@/pages/Auth";
 import Account from "@/pages/Account";
 import SamplePlan from "@/pages/SamplePlan";
+import Nutrition from "@/pages/Nutrition";
 import Navbar from "@/components/layout/Navbar";
 import { NeonAuthUIProvider } from "@neondatabase/neon-js/auth/react";
 import { authClient } from "@/lib/auth";
@@ -36,6 +37,7 @@ function App() {
                 <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/sample" element={<SamplePlan />} />
+                <Route path="/nutrition" element={<Nutrition />} />
                 <Route path="/auth/:pathname" element={<Auth />} />
                 <Route path="/account/:pathname" element={<Account />} />
               </Routes>

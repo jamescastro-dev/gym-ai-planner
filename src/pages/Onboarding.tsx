@@ -16,14 +16,7 @@ import {
 import type { UserProfile } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { PlanError } from "@/components/plan/PlanError";
-
-const goalOptions = [
-  { value: "bulk", label: "Build Muscle (Bulk)" },
-  { value: "cut", label: "Lose Fat (Cut)" },
-  { value: "recomp", label: "Body Recomposition" },
-  { value: "strength", label: "Build Strength" },
-  { value: "endurance", label: "Improve Endurance" },
-];
+import { goalOptions } from "@/data/goalOptions";
 
 const experienceOptions = [
   { value: "beginner", label: "Beginner (0-1 years)" },
