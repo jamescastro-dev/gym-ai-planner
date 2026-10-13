@@ -60,6 +60,25 @@ export interface GenerateOptions {
   complete?: CompleteFn;
   /** Override the model list (used by tests). */
   models?: string[];
+  /** Override the time limits in ms (used by tests). */
+  timing?: { attemptMs?: number; deadlineMs?: number; minAttemptMs?: number };
+}
+
+/** The attempt ran past its time limit. */
+class AttemptTimeoutError extends Error {
+  constructor(ms: number) {
+    super(`no answer within ${Math.round(ms / 1000)}s`);
+    this.name = "AttemptTimeoutError";
+  }
+}
+
+/** Rejects after `ms` whatever the promise does (the caller has already given up on it). */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new AttemptTimeoutError(ms)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 /** Ordered, free-only model list from OPENROUTER_MODELS (comma-separated). */
@@ -117,22 +136,30 @@ function createOpenRouterComplete(role: string): CompleteFn {
   });
 
   return async (model, prompt, timeoutMs) => {
-    const completion = await client.chat.completions.create(
-      {
-        model,
-        messages: [
-          {
-            role: "system",
-            content: `${role} You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text.`,
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.7,
-        response_format: { type: "json_object" },
-      },
-      { timeout: timeoutMs, maxRetries: 0 },
-    );
-    return completion.choices[0]?.message?.content;
+    // The SDK's `timeout` only covers the wait for response headers. OpenRouter sends those at once and then
+    // trickles keep-alive whitespace while the model works, so without this abort a slow model ran for minutes.
+    const abort = new AbortController();
+    const timer = setTimeout(() => abort.abort(), timeoutMs);
+    try {
+      const completion = await client.chat.completions.create(
+        {
+          model,
+          messages: [
+            {
+              role: "system",
+              content: `${role} You must respond with valid JSON only. Do not include any markdown, reasoning, or additional text.`,
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0.7,
+          response_format: { type: "json_object" },
+        },
+        { timeout: timeoutMs, maxRetries: 0, signal: abort.signal },
+      );
+      return completion.choices[0]?.message?.content;
+    } finally {
+      clearTimeout(timer);
+    }
   };
 }
 
@@ -152,7 +179,8 @@ function classify(err: unknown): Failure {
   if (e?.status === 401 || e?.status === 403) return { reason: `HTTP ${e.status} (check OPEN_ROUTER_KEY)`, fatal: true };
   if (e?.status === 404 || e?.status === 429) return { reason: `HTTP ${e.status}`, skipModel: true };
   if (e?.status) return { reason: `HTTP ${e.status}` };
-  if (e?.name === "APIConnectionTimeoutError" || e?.name === "AbortError") return { reason: "timeout" };
+  if (e instanceof AttemptTimeoutError) return { reason: `timeout (${e.message})` };
+  if (e?.name === "APIConnectionTimeoutError" || e?.name === "AbortError" || e?.name === "APIUserAbortError") return { reason: "timeout" };
   return { reason: e?.message ?? "unknown error" };
 }
 
@@ -189,6 +217,9 @@ export interface JsonTask<T> {
 export async function generateJson<T>(task: JsonTask<T>, options: GenerateOptions = {}): Promise<T> {
   const models = options.models ?? getModels();
   const complete = options.complete ?? createOpenRouterComplete(task.role);
+  const attemptLimit = options.timing?.attemptMs ?? ATTEMPT_TIMEOUT_MS;
+  const deadline = options.timing?.deadlineMs ?? GENERATION_DEADLINE_MS;
+  const minAttempt = options.timing?.minAttemptMs ?? MIN_ATTEMPT_MS;
 
   const startedAt = Date.now();
   const failures: string[] = [];
@@ -197,8 +228,8 @@ export async function generateJson<T>(task: JsonTask<T>, options: GenerateOption
   let badOutputs = 0;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const remaining = GENERATION_DEADLINE_MS - (Date.now() - startedAt);
-    if (remaining < MIN_ATTEMPT_MS) {
+    const remaining = deadline - (Date.now() - startedAt);
+    if (remaining < minAttempt) {
       failures.push("deadline reached");
       break;
     }
@@ -219,7 +250,8 @@ export async function generateJson<T>(task: JsonTask<T>, options: GenerateOption
 
     tries.set(model, (tries.get(model) ?? 0) + 1);
     try {
-      const content = await complete(model, task.prompt, Math.min(ATTEMPT_TIMEOUT_MS, remaining));
+      const limit = Math.min(attemptLimit, remaining);
+      const content = await withTimeout(complete(model, task.prompt, limit), limit);
       const result = task.parse(content);
       console.log(`[AI] ${task.what} generated by ${model} on attempt ${attempt}/${MAX_ATTEMPTS}`);
       return result;

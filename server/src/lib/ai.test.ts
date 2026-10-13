@@ -217,3 +217,28 @@ test("with OPENROUTER_MODELS unset the defaults are all :free", () => {
   assert.ok(models.length >= 1);
   assert.ok(models.every((m) => m.endsWith(":free")));
 });
+
+test("a model that never finishes is cut off at the attempt limit and the next model is tried", async () => {
+  const calls: string[] = [];
+  const complete = async (model: string) => {
+    calls.push(model);
+    if (model === MODELS[0]) return new Promise<string>(() => {}); // hangs forever (like a trickling response)
+    return GOOD;
+  };
+  const started = Date.now();
+  const plan = await generateTrainingPlan(profile, { complete, models: MODELS, timing: { attemptMs: 150, deadlineMs: 2000, minAttemptMs: 50 } });
+  assert.equal(plan.weeklySchedule.length, 4);
+  assert.deepEqual(calls, [MODELS[0], MODELS[1]]);
+  assert.ok(Date.now() - started < 1000, `took ${Date.now() - started}ms`);
+});
+
+test("the overall deadline holds even when every model hangs", async () => {
+  const complete = () => new Promise<string>(() => {});
+  const started = Date.now();
+  await assert.rejects(
+    generateTrainingPlan(profile, { complete, models: MODELS, timing: { attemptMs: 200, deadlineMs: 450, minAttemptMs: 100 } }),
+    (e: unknown) => e instanceof AiUnavailableError && e.reason === "busy" && /timeout/.test(e.failures.join(" ")),
+  );
+  const took = Date.now() - started;
+  assert.ok(took < 700, `took ${took}ms, deadline was 450ms`);
+});
