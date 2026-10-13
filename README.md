@@ -1,5 +1,7 @@
 # GymAI Planner
 
+[![CI](https://github.com/jamescastro-dev/gym-ai-planner/actions/workflows/ci.yml/badge.svg)](https://github.com/jamescastro-dev/gym-ai-planner/actions/workflows/ci.yml)
+
 An AI workout planner: answer a few questions about your goal, experience, schedule and equipment, and get a personalized weekly training plan with sets, reps, rest, RPE, form cues and exercise alternatives.
 
 **Live demo: [gym-ai-planner.vercel.app](https://gym-ai-planner.vercel.app)**
