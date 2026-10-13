@@ -30,6 +30,12 @@ export default function Navbar() {
         </Link>
 
         <nav className="flex items-center gap-2">
+          {/* No room next to the account buttons on a phone; phones reach it from the home page and the plan pages. */}
+          <Link to="/nutrition" className="hidden sm:block">
+            <Button variant="ghost" size="sm">
+              Nutrition
+            </Button>
+          </Link>
           {user ? (
             <>
               <Link to="/profile">

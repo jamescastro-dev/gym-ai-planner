@@ -7,6 +7,7 @@ import {
   Sparkles,
   Clock,
   Dumbbell,
+  Utensils,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -124,7 +125,7 @@ export default function Home() {
                 built around your goals, schedule, and equipment — in under 3 minutes.
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-3 mb-16">
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <Link to="/auth/sign-up">
                   <Button size="lg" className="gap-2 group">
                     Build My Plan
@@ -142,6 +143,16 @@ export default function Home() {
                   </Button>
                 </Link>
               </div>
+
+              <Link
+                to="/nutrition"
+                className="group inline-flex items-center gap-2 text-sm mb-14"
+                style={{ color: "var(--color-muted)" }}
+              >
+                <Utensils className="w-4 h-4" style={{ color: "var(--color-accent)" }} />
+                <span className="group-hover:underline">Free calorie and macro calculator</span>
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+              </Link>
 
               <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
                 {stats.map((s) => (

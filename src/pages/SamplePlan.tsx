@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PlanSections } from "@/components/plan/PlanSections";
+import { NutritionCallout } from "@/components/plan/NutritionCallout";
 import { samplePlan } from "@/data/samplePlan";
 import { useAuth } from "@/context/AuthContext";
 
@@ -61,6 +62,8 @@ export default function SamplePlan() {
           weeklySchedule={samplePlan.weeklySchedule}
           versionLabel="Sample"
         />
+
+        <NutritionCallout goal="bulk" />
       </div>
     </div>
   );

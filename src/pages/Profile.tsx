@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { RefreshCcw, Zap } from "lucide-react";
 import { PlanSections } from "@/components/plan/PlanSections";
 import { PlanError } from "@/components/plan/PlanError";
+import { NutritionCallout } from "@/components/plan/NutritionCallout";
 import { useState } from "react";
 
 export default function Profile() {
@@ -106,6 +107,7 @@ export default function Profile() {
           versionLabel={`v${plan.version}`}
         />
 
+        <NutritionCallout />
       </div>
     </div>
   );
