@@ -9,6 +9,14 @@ No account needed to see what it produces: open **View a sample plan**.
 
 > The backend runs on a hosted service that can take a little while to wake up after a period of inactivity, and plan generation itself takes roughly 30–60 seconds. Both are normal.
 
+## Demo
+
+<p>
+  <img src="docs/demo.gif" alt="Walkthrough: the home page, sign in, the questionnaire, the plan being built and the finished plan" width="300" />
+</p>
+
+<sub>Sign in, answer the questionnaire, wait while the plan is built, read the plan. Recorded on a phone-sized screen with mocked network responses (so no account or AI quota was used); the plan shown is the anonymized sample plan.</sub>
+
 ## Screenshots
 
 <p>
