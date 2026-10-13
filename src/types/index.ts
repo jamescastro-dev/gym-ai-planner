@@ -48,3 +48,33 @@ export interface TrainingPlan {
   version: number;
   createdAt: string;
 }
+export type Diet = "any" | "vegetarian" | "vegan" | "pescatarian";
+
+export interface MealRequest {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  goal: "bulk" | "cut" | "recomp" | "strength" | "endurance";
+  diet: Diet;
+  meals: 3 | 4 | 5;
+  avoid: string;
+}
+
+export interface Meal {
+  name: string;
+  title: string;
+  items: { food: string; amount: string }[];
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+export interface MealPlan {
+  meals: Meal[];
+  totals: { calories: number; protein: number; carbs: number; fat: number };
+  tips: string[];
+  /** Meal plans the user can still create today (absent on the example day). */
+  remainingToday?: number;
+}

@@ -1,4 +1,4 @@
-import type { UserProfile } from "../types";
+import type { MealPlan, MealRequest, UserProfile } from "../types";
 import { getAccessToken } from "./auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -83,4 +83,6 @@ export const api = {
   generatePlan: () => request("POST", "/plan/generate", {}),
 
   getCurrentPlan: () => request("GET", "/plan/current"),
+
+  generateMeals: (body: MealRequest): Promise<MealPlan> => request("POST", "/nutrition/meals", body),
 };
