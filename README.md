@@ -34,6 +34,7 @@ No account needed to see what it produces: open **View a sample plan**.
 - **AI-generated weekly plan** saved to your account, with a version history that grows each time you regenerate.
 - **Sample plan** page that works without an account (and even when the AI or the backend is down).
 - **Nutrition calculator**: daily calories and protein, carbs and fat for your goal, in metric or imperial. It runs entirely in the browser, so it needs no account and no AI quota, and it never sets a fat-loss target above maintenance or below a safe minimum.
+- **AI meal ideas**: a day of everyday meals with amounts that aims at those targets, for any diet (vegetarian, vegan, pescatarian) and leaving out foods you list. Signed-out visitors see a real example day. The reply is checked before it is shown: the right number of meals, within 20% of the calorie target, and nothing the diet or your list rules out.
 - **Graceful failure.** If the AI is busy you get a clear message and a link to the sample plan, never a raw error.
 - **Responsive**, including a phone layout for the plan tables.
 
@@ -87,8 +88,9 @@ All `/api` routes require `Authorization: Bearer <Neon Auth JWT>`.
 | `POST` | `/api/profile` | Create or update the signed-in user's questionnaire answers. |
 | `POST` | `/api/plan/generate` | Generate a new plan from the saved profile. |
 | `GET` | `/api/plan/current` | The signed-in user's latest plan, or `null`. |
+| `POST` | `/api/nutrition/meals` | Meal ideas for `{ calories, protein, carbs, fat, goal, diet, meals, avoid }` (the calculator's targets). Nothing is stored. |
 
-Errors are JSON: `{ "error": "…", "code": "AI_BUSY" }`. Codes include `AI_BUSY`, `AI_QUOTA`, `DAILY_LIMIT`, `RATE_LIMITED`, `IN_PROGRESS`, `PROFILE_REQUIRED`, `INVALID_PROFILE`, `UNAUTHENTICATED` and `INVALID_TOKEN`.
+Errors are JSON: `{ "error": "…", "code": "AI_BUSY" }`. Codes include `AI_BUSY`, `AI_QUOTA`, `DAILY_LIMIT`, `RATE_LIMITED`, `IN_PROGRESS`, `PROFILE_REQUIRED`, `INVALID_PROFILE`, `INVALID_REQUEST`, `UNAUTHENTICATED` and `INVALID_TOKEN`.
 
 ## Engineering notes
 
@@ -98,6 +100,7 @@ What went wrong in the first version of this project and how it was fixed. The d
 - **The API trusted the client for the user id.** Routes took a `userId` from the request, so anyone who knew an id could read or write that person's data. The server now verifies Neon Auth's signed JWT (EdDSA, against the published keys) and takes the id from the token. If the auth URL is not configured, the API refuses every request rather than letting them through.
 - **A free quota is a resource to defend.** Plans are limited per user (counted in the database), per IP and per day across all visitors, and only one generation per user can run at a time. When any limit is hit, or the AI is busy, the visitor sees a plain message and a link to a sample plan, never a raw error.
 - **Tests use real cryptography, not mocks of it.** The auth tests sign tokens with real EdDSA keys and serve them from a local key endpoint, so they check that wrong signatures, wrong issuers and expired tokens are rejected. The AI tests cover the fallback order, the attempt cap and every kind of bad output.
+- **A timeout that did not time out.** Each AI attempt had a 60-second limit, yet a real test took 250 seconds. OpenRouter sends the response headers at once and then keeps the connection alive with whitespace while the model works, and the SDK's timeout only covers the wait for headers. A local fake server reproduced it (a 2-second limit ran for 8 seconds). The fix aborts the request itself and also races each attempt against a timer, and tests prove a model that never answers is cut off and the next one is tried.
 - **Found by running it in a real browser.** The Neon Auth SDK's `token()` call returns the session, not a JWT, and the browser cannot read the token header directly in every setup. The client therefore takes the token from the session and falls back to the auth server's token endpoint. A unit test would not have caught this.
 
 ## Local setup
@@ -149,6 +152,8 @@ For local development set `VITE_API_URL=http://localhost:3001` in `.env`. Sign-i
 | `ALLOWED_ORIGINS` | no | Comma-separated browser origins allowed to call the API. Add a custom domain here. |
 | `PLANS_PER_USER_PER_DAY` | no | Default `3`. |
 | `GENERATE_REQUESTS_PER_IP_PER_DAY` | no | Default `10`. |
+| `MEAL_PLANS_PER_USER_PER_DAY` | no | Default `2`. |
+| `MEAL_REQUESTS_PER_IP_PER_DAY` | no | Default `6`. |
 | `AI_DAILY_BUDGET` | no | OpenRouter requests per UTC day, default `45`. |
 | `TRUST_PROXY_HOPS` | no | Reverse proxies in front of the server, default `1`. |
 | `PORT`, `BASE_URL` | no | Listen port (Render sets it) and the Referer sent to OpenRouter. |
@@ -165,7 +170,7 @@ See [`server/.env.example`](server/.env.example) for details and the models that
 | root | `npm test` | Unit tests for the nutrition calculator, including hand-worked examples and a sweep over 3,200 input combinations. |
 | `server/` | `npm run dev:server` | Backend with auto-reload. |
 | `server/` | `npm run build` / `npm start` | Generate the Prisma client and compile; run the compiled server. |
-| `server/` | `npm test` | Unit tests for the model fallback, output validation and JWT verification (Node's built-in test runner). |
+| `server/` | `npm test` | Unit tests for the model fallback and time limits, plan and meal-plan validation, and JWT verification (Node's built-in test runner). |
 
 ## Deployment
 
@@ -202,7 +207,8 @@ Deploy the backend first, then the frontend. After the first deploy check the lo
 ## Known limitations
 
 - Free models change. They get removed, slowed down or rate-limited from time to time, which is why the list is configuration and not code. Check the tested list in `server/.env.example` and re-test slugs against `https://openrouter.ai/api/v1/models` when generation starts failing.
-- The per-IP limit and the daily AI request cap are held in memory and reset when the server restarts. The per-user limit is stored in the database and survives restarts.
+- The per-IP limits, the per-user meal-plan limit and the daily AI request cap are held in memory and reset when the server restarts. The per-user plan limit is stored in the database and survives restarts.
+- Meal ideas are written by a language model, so the calories and macros per meal are estimates and can be noticeably off (models are poor at nutrition arithmetic). Computing them from a food database would fix that.
 - Generation is synchronous (a single request that waits for the AI), so it is capped at 90 seconds.
 - Neon Auth and `@neondatabase/neon-js` are in beta; the SDK version is pinned to the 0.2 line.
 
@@ -214,13 +220,15 @@ src/                     React app
   context/AuthContext    Session, current plan, save profile / generate plan
   data/samplePlan.ts     Anonymized real plan used by the sample page
   lib/nutrition.ts       Calorie and macro calculation (pure functions, unit tested)
+  components/nutrition/  Macro chart, meal ideas, button groups
   lib/api.ts             API client (adds the Neon Auth token, handles errors and timeouts)
   lib/auth.ts            Neon Auth client and token helper
   pages/                 Home, Onboarding, Profile, SamplePlan, Nutrition, Auth, Account
 server/
   src/index.ts           Express app, CORS, routing
-  src/routes/            /api/profile and /api/plan
-  src/lib/ai.ts          Model fallback, prompt, output validation
+  src/routes/            /api/profile, /api/plan and /api/nutrition
+  src/lib/ai.ts          Model fallback and time limits, plan prompt and validation
+  src/lib/meals.ts       Meal-plan request checks, prompt and validation
   src/lib/auth.ts        JWT verification middleware
   src/lib/limits.ts      Rate limits
   prisma/                Schema and migrations

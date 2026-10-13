@@ -13,6 +13,7 @@ Captured in Chrome at 390px wide (a phone) unless the name says `1280`, with the
 | `onboarding-ai-busy-390.png` | "The AI is busy" message with the sample-plan button |
 | `onboarding-daily-limit-390.png`, `regenerate-daily-limit-390.png` | Daily-limit message on the questionnaire and on the plan page |
 | `home-before-390.png` | Landing page before the changes |
-| `nutrition-390.png` | The nutrition calculator with its example values |
+| `nutrition-390.png` | Nutrition targets: calories, macros and the calorie split |
+| `nutrition-meals-390.png` | AI meal ideas (the example day signed-out visitors see) |
 | `sign-in-390.png` | Neon Auth sign-in view |
 | `home-1280.png`, `sample-plan-1280.png` | Desktop layout |
