@@ -20,6 +20,41 @@ export const generateIpLimiter = rateLimit({
   },
 });
 
+/** Meal plans one user may create per rolling 24h. In-memory (no table for meal plans): resets if the server restarts. */
+export const USER_DAILY_MEAL_LIMIT = Number(process.env.MEAL_PLANS_PER_USER_PER_DAY) || 2;
+
+/** Per-IP cap on meal-plan requests per day. In-memory, separate from the plan limiter. */
+export const mealIpLimiter = rateLimit({
+  windowMs: DAY_MS,
+  limit: Number(process.env.MEAL_REQUESTS_PER_IP_PER_DAY) || 6,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: "Too many meal-plan requests from your network today. Try again tomorrow.",
+      code: "RATE_LIMITED",
+    });
+  },
+});
+
+/** Rolling 24h counter per key, in memory. */
+export class DailyCounter {
+  private readonly hits = new Map<string, number[]>();
+  constructor(private readonly now: () => number = Date.now) {}
+
+  count(key: string): number {
+    const since = this.now() - DAY_MS;
+    const recent = (this.hits.get(key) ?? []).filter((t) => t > since);
+    if (recent.length) this.hits.set(key, recent);
+    else this.hits.delete(key);
+    return recent.length;
+  }
+
+  add(key: string) {
+    this.hits.set(key, [...(this.hits.get(key) ?? []), this.now()]);
+  }
+}
+
 let proxyLogged = false;
 
 /**

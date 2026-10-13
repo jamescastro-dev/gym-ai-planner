@@ -3,6 +3,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import { profileRouter } from "./routes/profile.js";
 import { planRouter } from "./routes/plan.js";
+import { nutritionRouter } from "./routes/nutrition.js";
 import { getModels } from "./lib/ai.js";
 
 const app = express();
@@ -43,6 +44,7 @@ app.get("/health", (_req, res) => res.json({ status: "ok" }));
 //API Routes
 app.use("/api/profile", profileRouter);
 app.use("/api/plan", planRouter);
+app.use("/api/nutrition", nutritionRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
