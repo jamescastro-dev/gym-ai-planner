@@ -33,6 +33,7 @@ No account needed to see what it produces: open **View a sample plan**.
 - **Questionnaire** for goal, experience, days per week, session length, equipment, preferred split and injuries.
 - **AI-generated weekly plan** saved to your account, with a version history that grows each time you regenerate.
 - **Sample plan** page that works without an account (and even when the AI or the backend is down).
+- **Nutrition calculator**: daily calories and protein, carbs and fat for your goal, in metric or imperial. It runs entirely in the browser, so it needs no account and no AI quota, and it never sets a fat-loss target above maintenance or below a safe minimum.
 - **Graceful failure.** If the AI is busy you get a clear message and a link to the sample plan, never a raw error.
 - **Responsive**, including a phone layout for the plan tables.
 
@@ -161,6 +162,7 @@ See [`server/.env.example`](server/.env.example) for details and the models that
 | root | `npm run dev` | Frontend dev server. |
 | root | `npm run build` | Type-check and build the frontend. |
 | root | `npm run lint` | ESLint (frontend and server). |
+| root | `npm test` | Unit tests for the nutrition calculator, including hand-worked examples and a sweep over 3,200 input combinations. |
 | `server/` | `npm run dev:server` | Backend with auto-reload. |
 | `server/` | `npm run build` / `npm start` | Generate the Prisma client and compile; run the compiled server. |
 | `server/` | `npm test` | Unit tests for the model fallback, output validation and JWT verification (Node's built-in test runner). |
@@ -211,9 +213,10 @@ src/                     React app
   components/plan/       Plan rendering (table on desktop, stacked rows on phones)
   context/AuthContext    Session, current plan, save profile / generate plan
   data/samplePlan.ts     Anonymized real plan used by the sample page
+  lib/nutrition.ts       Calorie and macro calculation (pure functions, unit tested)
   lib/api.ts             API client (adds the Neon Auth token, handles errors and timeouts)
   lib/auth.ts            Neon Auth client and token helper
-  pages/                 Home, Onboarding, Profile, SamplePlan, Auth, Account
+  pages/                 Home, Onboarding, Profile, SamplePlan, Nutrition, Auth, Account
 server/
   src/index.ts           Express app, CORS, routing
   src/routes/            /api/profile and /api/plan
