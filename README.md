@@ -41,17 +41,27 @@ No account needed to see what it produces: open **View a sample plan**.
 
 ## How it works
 
-```
-Browser (Vercel) ──sign in──▶ Neon Auth
-   │  └─ gets a short-lived JWT
-   │
-   └─ API call with  Authorization: Bearer <JWT>
-          ▼
-Express API (Render)
-   ├─ verifies the JWT against Neon Auth's public keys (the user id comes from the token, never from the request)
-   ├─ rate limits plan generation
-   ├─ reads / writes the profile and plans in Neon Postgres (Prisma)
-   └─ asks OpenRouter for a plan, trying free models in order until one returns a valid plan
+```mermaid
+sequenceDiagram
+    actor U as Visitor
+    participant W as Web app (Vercel)
+    participant A as Neon Auth
+    participant S as API (Render)
+    participant D as Neon Postgres
+    participant O as OpenRouter (free models)
+
+    U->>W: Sign in
+    W->>A: Credentials
+    A-->>W: Session and a short-lived JWT
+    U->>W: Generate my plan
+    W->>S: POST /api/plan/generate with Bearer JWT
+    S->>A: Fetch public keys (cached)
+    Note over S: Verify the JWT, then check the rate limits and the daily AI budget
+    S->>O: Prompt (model 1, then 2, then 3 if needed)
+    O-->>S: Plan as JSON
+    Note over S: Validate: exact number of days, drop empty days, retry once
+    S->>D: Save the plan as a new version
+    S-->>W: The plan
 ```
 
 **Plan generation.** `OPENROUTER_MODELS` is an ordered list of free models. If one returns 404 or 429, an empty reply, or invalid JSON, the next is tried, with a hard cap of **3 requests per plan** (failed requests can still count toward OpenRouter's free daily limit). The reply is validated: it must contain exactly the requested number of training days, empty days are dropped, and bad output gets one retry.
@@ -70,6 +80,16 @@ All `/api` routes require `Authorization: Bearer <Neon Auth JWT>`.
 | `GET` | `/api/plan/current` | The signed-in user's latest plan, or `null`. |
 
 Errors are JSON: `{ "error": "…", "code": "AI_BUSY" }`. Codes include `AI_BUSY`, `AI_QUOTA`, `DAILY_LIMIT`, `RATE_LIMITED`, `IN_PROGRESS`, `PROFILE_REQUIRED`, `INVALID_PROFILE`, `UNAUTHENTICATED` and `INVALID_TOKEN`.
+
+## Engineering notes
+
+What went wrong in the first version of this project and how it was fixed. The decisions behind the code:
+
+- **A deprecated free model took the app down.** Plan generation used one hard-coded free model. When OpenRouter removed it from the free tier, every generation failed. The model list is now configuration, tried in order, and a reply is only accepted if it parses and has exactly the requested number of days. Attempts are capped at 3 per plan, because failed requests still count toward the free daily quota.
+- **The API trusted the client for the user id.** Routes took a `userId` from the request, so anyone who knew an id could read or write that person's data. The server now verifies Neon Auth's signed JWT (EdDSA, against the published keys) and takes the id from the token. If the auth URL is not configured, the API refuses every request rather than letting them through.
+- **A free quota is a resource to defend.** Plans are limited per user (counted in the database), per IP and per day across all visitors, and only one generation per user can run at a time. When any limit is hit, or the AI is busy, the visitor sees a plain message and a link to a sample plan, never a raw error.
+- **Tests use real cryptography, not mocks of it.** The auth tests sign tokens with real EdDSA keys and serve them from a local key endpoint, so they check that wrong signatures, wrong issuers and expired tokens are rejected. The AI tests cover the fallback order, the attempt cap and every kind of bad output.
+- **Found by running it in a real browser.** The Neon Auth SDK's `token()` call returns the session, not a JWT, and the browser cannot read the token header directly in every setup. The client therefore takes the token from the session and falls back to the auth server's token endpoint. A unit test would not have caught this.
 
 ## Local setup
 
