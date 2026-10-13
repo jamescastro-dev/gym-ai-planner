@@ -49,7 +49,7 @@ export function PlanSections({
                 {stat.label}
               </p>
               <p
-                className="text-sm font-semibold truncate cursor-default"
+                className="text-sm font-semibold line-clamp-2 wrap-anywhere cursor-default"
                 style={{ color: "var(--color-foreground)" }}
                 onMouseEnter={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
