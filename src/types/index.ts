@@ -77,4 +77,6 @@ export interface MealPlan {
   tips: string[];
   /** Meal plans the user can still create today (absent on the example day). */
   remainingToday?: number;
+  /** Set when none are left: when the next one becomes available (ISO time). */
+  nextAvailableAt?: string;
 }

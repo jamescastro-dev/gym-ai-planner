@@ -53,6 +53,13 @@ export class DailyCounter {
   add(key: string) {
     this.hits.set(key, [...(this.hits.get(key) ?? []), this.now()]);
   }
+
+  /** When the oldest hit in the window expires (ms since epoch), i.e. when one more becomes available; null if none. */
+  nextFreeAt(key: string): number | null {
+    this.count(key); // drop expired hits first
+    const oldest = this.hits.get(key)?.[0];
+    return oldest === undefined ? null : oldest + DAY_MS;
+  }
 }
 
 let proxyLogged = false;

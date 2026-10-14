@@ -35,7 +35,14 @@ nutritionRouter.post("/meals", logProxyOnce, mealIpLimiter, async (req: Request,
   try {
     const plan = await generateMealPlan(parsed);
     mealPlansToday.add(userId);
-    res.json({ ...plan, remainingToday: Math.max(0, USER_DAILY_MEAL_LIMIT - mealPlansToday.count(userId)) });
+    const remainingToday = Math.max(0, USER_DAILY_MEAL_LIMIT - mealPlansToday.count(userId));
+    const nextFreeAt = remainingToday === 0 ? mealPlansToday.nextFreeAt(userId) : null;
+    res.json({
+      ...plan,
+      remainingToday,
+      // Lets the page disable the button until then instead of letting people click into the limit message.
+      ...(nextFreeAt ? { nextAvailableAt: new Date(nextFreeAt).toISOString() } : {}),
+    });
   } catch (error) {
     if (error instanceof AiUnavailableError) {
       console.error("AI meal plan failed:", error.message);

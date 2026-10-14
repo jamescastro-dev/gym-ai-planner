@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { AlertCircle, Apple, Lightbulb, Loader2, Moon, Sparkles, Sun, Sunrise, Utensils, type LucideIcon } from "lucide-react";
+import { AlertCircle, Apple, Clock, Lightbulb, Loader2, Moon, Sparkles, Sun, Sunrise, Utensils, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { useAuth } from "@/context/AuthContext";
@@ -31,6 +31,13 @@ interface Saved {
 }
 
 const DEFAULT_SAVED: Saved = { diet: "any", meals: "4", avoid: "" };
+
+/** "at 3:42 PM" today, otherwise "tomorrow at 3:42 PM". */
+function formatWhen(iso: string): string {
+  const at = new Date(iso);
+  const time = at.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return at.toDateString() === new Date().toDateString() ? `at ${time}` : `tomorrow at ${time}`;
+}
 
 // Per user, in this browser only (a convenience; nothing is stored on the server).
 const storageKey = (userId: string) => `gymai.meals.v1.${userId}`;
@@ -96,6 +103,9 @@ function SignedInMeals({ userId, targets, goal }: { userId: string; targets: Nut
   const [saved, setSaved] = useState<Saved>(() => load(userId));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // The server said the daily limit is reached (e.g. used up on another device).
+  const [limitHit, setLimitHit] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     try {
@@ -121,7 +131,9 @@ function SignedInMeals({ userId, targets, goal }: { userId: string; targets: Nut
         avoid: saved.avoid,
       });
       setSaved((s) => ({ ...s, result: { plan, forCalories: targets.calories } }));
+      setNow(Date.now());
     } catch (err) {
+      if (err instanceof ApiError && err.code === "DAILY_LIMIT") setLimitHit(true);
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -129,6 +141,9 @@ function SignedInMeals({ userId, targets, goal }: { userId: string; targets: Nut
   }
 
   const result = saved.result;
+  const nextAt = result?.plan.nextAvailableAt;
+  const waitingUntil = nextAt && Date.parse(nextAt) > now ? nextAt : undefined;
+  const blocked = limitHit || Boolean(waitingUntil);
   const stale = result && targets && Math.abs(result.forCalories - targets.calories) >= 50;
 
   return (
@@ -164,16 +179,24 @@ function SignedInMeals({ userId, targets, goal }: { userId: string; targets: Nut
           />
         </div>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <Button onClick={generate} disabled={!targets || loading} className="gap-2 sm:w-auto w-full">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {loading ? "Writing your meal ideas..." : result ? "New meal ideas" : "Get meal ideas"}
+          <Button onClick={generate} disabled={!targets || loading || blocked} className="gap-2 sm:w-auto w-full">
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : blocked ? (
+              <Clock className="w-4 h-4" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            {loading ? "Writing your meal ideas..." : blocked ? "Daily limit reached" : result ? "New meal ideas" : "Get meal ideas"}
           </Button>
           <p className="text-xs" style={{ color: "var(--color-muted)" }}>
-            {targets
-              ? `For ${formatNumber(targets.calories)} kcal. Uses free AI: a few per day${
-                  result?.plan.remainingToday !== undefined ? ` (${result.plan.remainingToday} left today)` : ""
-                }.`
-              : "Fill in your details above first."}
+            {blocked
+              ? `You've used today's free meal plans. ${waitingUntil ? `The next one is available ${formatWhen(waitingUntil)}.` : "Try again tomorrow."}`
+              : targets
+                ? `For ${formatNumber(targets.calories)} kcal. Uses free AI: a few per day${
+                    result?.plan.remainingToday !== undefined ? ` (${result.plan.remainingToday} left today)` : ""
+                  }.`
+                : "Fill in your details above first."}
           </p>
         </div>
       </Card>
@@ -195,6 +218,15 @@ function SignedInMeals({ userId, targets, goal }: { userId: string; targets: Nut
 
       {loading ? (
         <MealSkeleton count={Number(saved.meals)} />
+      ) : error && !result ? (
+        // Like the training plan's sample-plan fallback: something useful to look at while the free AI is busy.
+        <>
+          <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
+            Meanwhile, here is a real example day for {formatNumber(SAMPLE_MEALS_FOR.calories)} kcal over{" "}
+            {SAMPLE_MEALS_FOR.meals} meals.
+          </p>
+          <MealDay plan={sampleMeals} targetCalories={SAMPLE_MEALS_FOR.calories} />
+        </>
       ) : result ? (
         <>
           {stale && (

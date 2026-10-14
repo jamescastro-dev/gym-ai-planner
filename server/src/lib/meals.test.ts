@@ -136,6 +136,9 @@ test("DailyCounter counts a rolling 24 hours", () => {
   now = 25 * 60 * 60 * 1000; // the first one is now older than 24h
   assert.equal(c.count("u"), 1);
   assert.equal(c.count("someone-else"), 0);
+  // the remaining hit (made at 10h) frees up at 34h
+  assert.equal(c.nextFreeAt("u"), 34 * 60 * 60 * 1000);
+  assert.equal(c.nextFreeAt("someone-else"), null);
 });
 
 test("bare-number amounts get grams; amounts with a unit are left alone", () => {
