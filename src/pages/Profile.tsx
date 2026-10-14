@@ -1,16 +1,18 @@
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
-import { RefreshCcw, Zap } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { CloudOff, RefreshCcw, Zap } from "lucide-react";
 import { PlanSections } from "@/components/plan/PlanSections";
 import { PlanError } from "@/components/plan/PlanError";
 import { NutritionCallout } from "@/components/plan/NutritionCallout";
 import { useState } from "react";
 
 export default function Profile() {
-  const { user, isLoading, isPlanLoading, plan, generatePlan } = useAuth();
+  const { user, isLoading, isPlanLoading, plan, planError, generatePlan, refreshData } = useAuth();
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [error, setError] = useState("");
+  const [isRetrying, setIsRetrying] = useState(false);
 
   if (!user && !isLoading) return <Navigate to="/auth/sign-in" replace />;
   if (isLoading || isPlanLoading) {
@@ -23,6 +25,21 @@ export default function Profile() {
       >
         <Zap className="w-8 h-8 animate-pulse" style={{ color: "var(--color-accent)" }} />
       </div>
+    );
+  }
+  // Only a successful "no plan yet" means the questionnaire. If loading failed (backend down or asleep, server error),
+  // stay here with a retry: sending a returning user to the questionnaire would look like their plan was lost.
+  if (!plan && planError) {
+    return (
+      <PlanLoadFailed
+        message={planError}
+        isRetrying={isRetrying}
+        onRetry={async () => {
+          setIsRetrying(true);
+          await refreshData();
+          setIsRetrying(false);
+        }}
+      />
     );
   }
   if (!plan) return <Navigate to="/onboarding" replace />;
@@ -108,6 +125,44 @@ export default function Profile() {
         />
 
         <NutritionCallout />
+      </div>
+    </div>
+  );
+}
+
+function PlanLoadFailed({ message, isRetrying, onRetry }: { message: string; isRetrying: boolean; onRetry: () => void }) {
+  return (
+    <div className="min-h-screen pt-24 pb-16 px-6" style={{ background: "var(--color-background)" }}>
+      <div className="relative max-w-xl mx-auto">
+        <Card variant="bordered" className="text-center">
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: "color-mix(in srgb, var(--color-accent) 12%, transparent)" }}
+          >
+            <CloudOff className="w-6 h-6" style={{ color: "var(--color-accent)" }} />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mb-2" style={{ color: "var(--color-foreground)" }}>
+            We couldn't load your plan
+          </h1>
+          <p className="text-sm mb-1" style={{ color: "var(--color-muted)" }}>
+            Your plan is still saved. The app just can't reach the server right now, which usually clears up within a
+            minute.
+          </p>
+          <p role="alert" className="text-xs mb-6" style={{ color: "var(--color-muted)" }}>
+            {message.startsWith("Can't reach the server") ? null : message}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button onClick={onRetry} disabled={isRetrying} className="gap-2">
+              <RefreshCcw className={`w-4 h-4 ${isRetrying ? "animate-spin" : ""}`} />
+              {isRetrying ? "Trying again..." : "Try again"}
+            </Button>
+            <Link to="/sample">
+              <Button variant="secondary" className="w-full">
+                View a sample plan
+              </Button>
+            </Link>
+          </div>
+        </Card>
       </div>
     </div>
   );

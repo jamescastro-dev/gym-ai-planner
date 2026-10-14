@@ -9,7 +9,7 @@ import {
 } from "react";
 import type { TrainingPlan, UserProfile } from "../types";
 import { authClient } from "../lib/auth";
-import { api } from "../lib/api";
+import { ApiError, api } from "../lib/api";
 
 type SessionUser = NonNullable<
   Awaited<ReturnType<typeof authClient.getSession>>["data"]
@@ -21,6 +21,8 @@ interface AuthContextType {
   isLoading: boolean;
   /** True until the first fetch of the signed-in user's plan has finished (so pages don't treat "not loaded yet" as "no plan"). */
   isPlanLoading: boolean;
+  /** Set when the plan couldn't be loaded (backend down, timeout, server error). Not the same as "no plan yet". */
+  planError: string | null;
   saveProfile: (
     profile: Omit<UserProfile, "userId" | "updatedAt">,
   ) => Promise<void>;
@@ -35,6 +37,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [plan, setPlan] = useState<TrainingPlan | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPlanLoading, setIsPlanLoading] = useState(true);
+  const [planError, setPlanError] = useState<string | null>(null);
   const isRefreshingRef = useRef(false);
   const userId = neonUser?.id;
 
@@ -65,7 +68,8 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // The backend identifies the user from the auth token.
-      const planData = await api.getCurrentPlan().catch(() => null);
+      const planData = await api.getCurrentPlan();
+      setPlanError(null);
       if (planData) {
         setPlan({
           id: planData.id,
@@ -78,7 +82,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (error) {
+      // Couldn't load is not the same as "no plan": keep any plan already shown, and let pages show a retry
+      // instead of sending a returning user back to the questionnaire.
       console.error("Error refreshing data:", error);
+      setPlanError(error instanceof ApiError ? error.message : "Couldn't load your plan. Please try again.");
     } finally {
       isRefreshingRef.current = false;
       setIsPlanLoading(false);
@@ -91,6 +98,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         refreshData();
       } else {
         setPlan(null);
+        setPlanError(null);
         setIsPlanLoading(false);
       }
       setIsLoading(false);
@@ -121,6 +129,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         plan,
         isLoading,
         isPlanLoading,
+        planError,
         saveProfile,
         generatePlan,
         refreshData,
