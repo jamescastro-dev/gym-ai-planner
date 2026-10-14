@@ -2,7 +2,7 @@ import { beforeEach, test } from "node:test";
 import assert from "node:assert/strict";
 import { resetBudget, type CompleteFn } from "./ai.js";
 import { DailyCounter } from "./limits.js";
-import { generateMealPlan, parseMealPlan, parseMealRequest, type MealRequest } from "./meals.js";
+import { generateMealPlan, parseMealPlan, parseMealRequest, withUnit, type MealRequest } from "./meals.js";
 
 beforeEach(() => resetBudget());
 
@@ -136,4 +136,15 @@ test("DailyCounter counts a rolling 24 hours", () => {
   now = 25 * 60 * 60 * 1000; // the first one is now older than 24h
   assert.equal(c.count("u"), 1);
   assert.equal(c.count("someone-else"), 0);
+});
+
+test("bare-number amounts get grams; amounts with a unit are left alone", () => {
+  assert.equal(withUnit(80), "80 g");
+  assert.equal(withUnit("250"), "250 g");
+  assert.equal(withUnit("12.5"), "12.5 g");
+  assert.equal(withUnit("250 ml"), "250 ml");
+  assert.equal(withUnit("1 medium"), "1 medium");
+  assert.equal(withUnit(null), "");
+  const bare = JSON.stringify({ meals: [1, 2, 3].map((n) => ({ name: "M" + n, title: "Meal " + n, items: [{ food: "Oats", amount: 80 }], calories: 680, protein: 40, carbs: 88, fat: 19 })) });
+  assert.equal(parseMealPlan(bare, req()).meals[0].items[0].amount, "80 g");
 });

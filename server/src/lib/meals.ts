@@ -94,6 +94,12 @@ const wordIn = (word: string, text: string) =>
   new RegExp(`(^|[^\\p{L}])${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^\\p{L}])`, "iu").test(text);
 
 const text = (value: unknown): string => (typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "");
+/** Models sometimes answer 80 or "80" for "80 g": a bare number gets grams, so the list never shows "80 rolled oats". */
+export const withUnit = (value: unknown): string => {
+  const raw = typeof value === "number" && Number.isFinite(value) ? String(value) : text(value);
+  return /^\d+(\.\d+)?$/.test(raw) ? `${raw} g` : raw;
+};
+
 const amount = (value: unknown): number => {
   const n = Math.round(Number(value));
   return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -110,7 +116,7 @@ export function parseMealPlan(content: string | null | undefined, req: MealReque
     if (!isRecord(m)) continue;
     const items = (Array.isArray(m.items) ? m.items : [])
       .filter(isRecord)
-      .map((i) => ({ food: text(i.food), amount: text(i.amount) }))
+      .map((i) => ({ food: text(i.food), amount: withUnit(i.amount) }))
       .filter((i) => i.food !== "");
     const title = text(m.title);
     if (!title || items.length === 0) continue;
@@ -182,7 +188,7 @@ Return JSON with this exact structure:
     {
       "name": "${names[0]}",
       "title": "short appetizing name of the meal",
-      "items": [{ "food": "food name", "amount": "amount in grams, ml or pieces" }],
+      "items": [{ "food": "food name", "amount": "amount WITH its unit, e.g. 80 g, 250 ml, 1 medium" }],
       "calories": 500,
       "protein": 35,
       "carbs": 55,
@@ -197,7 +203,7 @@ Requirements:
 - The meals' calories and macros must add up to the daily targets (within 5%)
 - 2-5 items per meal, everyday supermarket foods, simple to prepare
 - Spread protein across the meals
-- Amounts in grams or ml where possible
+- Every amount includes its unit (g, ml or pieces), never a bare number
 - At most 2 tips
 
 Return ONLY the JSON object (no markdown, no extra text).`;
