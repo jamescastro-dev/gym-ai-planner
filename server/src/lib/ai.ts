@@ -12,12 +12,13 @@ dotenv.config();
 type GeneratedPlan = Omit<TrainingPlan, "id" | "userId" | "version" | "createdAt">;
 
 /**
- * Used only when OPENROUTER_MODELS is unset. Ordered fastest-first; each one was
- * tested against OpenRouter's API and returned a valid 4-day plan (see README).
+ * Used only when OPENROUTER_MODELS is unset. Three different providers, so one busy upstream can't take out
+ * every attempt. Nemotron and Dots were re-tested on 2026-10-14 (valid plan and meal plan, reasoning off);
+ * Gemma passed earlier but was rate-limited upstream that day. Apodex was dropped: OpenRouter removed it.
  */
 const DEFAULT_MODELS = [
   "nvidia/nemotron-3-super-120b-a12b:free",
-  "apodex/apodex-1.1-mini:free",
+  "dots-studio/dots-3-note-preview:free",
   "google/gemma-4-26b-a4b-it:free",
 ];
 
@@ -120,6 +121,13 @@ export function resetBudget() {
 
 const TRAINER_ROLE = "You are an expert fitness trainer and program designer.";
 
+/**
+ * OpenRouter's reasoning switch (not in the OpenAI SDK's types). The free models "think" before answering by default,
+ * which made a meal plan take 250s and plans 30-60s; with it off they answered in 5-8s (meals) and 22-47s (plans),
+ * and the output still passed validation.
+ */
+const NO_REASONING = { reasoning: { enabled: false } } as Record<string, unknown>;
+
 function createOpenRouterComplete(role: string): CompleteFn {
   const apiKey = process.env.OPEN_ROUTER_KEY;
   if (!apiKey) throw new Error("OPEN_ROUTER_KEY is not set");
@@ -143,6 +151,7 @@ function createOpenRouterComplete(role: string): CompleteFn {
     try {
       const completion = await client.chat.completions.create(
         {
+          ...NO_REASONING,
           model,
           messages: [
             {
